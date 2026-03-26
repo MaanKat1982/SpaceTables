@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Space Tables: Division Edition</title>
+    <style>
+        :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; background-color: #000; position: fixed; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
+        #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: #000; overflow: hidden; transition: background 0.1s; }
+
+        .laser-beam { position: absolute; height: 6px; background: #fff; box-shadow: 0 0 15px 5px var(--neon-blue); z-index: 8; transform-origin: right center; pointer-events: none; }
+        .debris { position: absolute; width: 5px; height: 5px; z-index: 20; pointer-events: none; border-radius: 1px; }
+        
+        .invader { position: absolute; width: 60px; height: 55px; display: flex; flex-direction: column; align-items: center; z-index: 5; }
+        .invader-svg { width: 40px; height: 30px; fill: var(--alien-green); }
+        .math-bubble { background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 16px; font-weight: 900; margin-bottom: 4px; border: 1px solid #000; white-space: nowrap; }
+        .invader.rainbow { animation: rainbow-flash 0.3s infinite; }
+        .math-bubble.second-stage { background: #ff00ff; color: #fff; border: 2px solid #fff; }
+        @keyframes rainbow-flash { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+        .boss { position: absolute; width: 220px; height: 180px; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+        .boss-svg { width: 180px; height: 120px; fill: var(--neon-pink); filter: drop-shadow(0 0 20px var(--neon-pink)); }
+        .boss-hp { width: 100%; height: 12px; background: #333; border: 2px solid #fff; margin-top: 10px; border-radius: 6px; overflow: hidden; }
+        #boss-hp-fill { width: 100%; height: 100%; background: var(--neon-pink); transition: width 0.3s; }
+
+        #ui-bottom { position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; background: #111; border-top: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: space-evenly; padding: 5px; z-index: 9999; }
+        .display-val { width: 60px; text-align: center; font-size: 28px; color: #fff; font-weight: bold; border-right: 2px solid #333; }
+        .key { flex: 1; margin: 2px; height: 65px; background: #222; border: 1px solid var(--neon-blue); color: var(--neon-blue); font-size: 22px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+        .key:active { background: var(--neon-blue); color: #000; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .card { background: #050510; padding: 15px; border: 3px solid var(--neon-blue); text-align: center; border-radius: 15px; width: 90%; max-width: 500px; }
+        .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; }
+        .table-btn { padding: 10px; border: 2px solid var(--neon-blue); background: transparent; color: white; border-radius: 8px; font-size: 16px; font-family: inherit; }
+        .table-btn.active { background: var(--neon-blue); color: #000; font-weight: bold; }
+        .highscore-table { width: 100%; font-size: 11px; color: var(--neon-blue); margin: 10px 0; border-collapse: collapse; text-align: left; }
+        
+        .mode-select { margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 20px; color: #fff; font-size: 14px; }
+        input[type="checkbox"] { transform: scale(1.5); accent-color: var(--neon-blue); }
+    </style>
+</head>
+<body>
+
+<div id="menu-screen" class="overlay">
+    <div class="card">
+        <h2 style="color: var(--neon-blue); margin: 0;">SPACE TABLES</h2>
+        <table id="start-highscore-box" class="highscore-table"></table>
+        <div class="table-grid">
+            <button class="table-btn" onclick="toggleTable(1, this)">1</button>
+            <button class="table-btn" onclick="toggleTable(2, this)">2</button>
+            <button class="table-btn" onclick="toggleTable(3, this)">3</button>
+            <button class="table-btn" onclick="toggleTable(4, this)">4</button>
+            <button class="table-btn" onclick="toggleTable(5, this)">5</button>
+            <button class="table-btn" onclick="toggleTable(6, this)">6</button>
+            <button class="table-btn" onclick="toggleTable(7, this)">7</button>
+            <button class="table-btn" onclick="toggleTable(8, this)">8</button>
+            <button class="table-btn" onclick="toggleTable(9, this)">9</button>
+            <button class="table-btn" onclick="toggleTable(10, this)">10</button>
+        </div>
+        
+        <div class="mode-select">
+            <label><input type="checkbox" id="check-division"> DEELTAFELS</label>
+        </div>
+
+        <div style="margin: 10px 0; color: #fff; font-size: 14px;">
+            NIVEAU: 
+            <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue); font-family:inherit; padding: 5px;">
+                <option value="0.7">REKRUUT</option>
+                <option value="1.1" selected>SOLDAAT</option>
+                <option value="2.0">ELITE</option>
+            </select>
+        </div>
+        <button onclick="startGame()" style="background:var(--alien-green); border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; font-size: 18px;">START MISSIE</button>
+    </div>
+</div>
+
+<div id="game-over-screen" class="overlay" style="display:none;">
+    <div class="card">
+        <h2 id="end-title" style="color: var(--neon-pink);">MISSIE EINDE</h2>
+        <p style="color: #fff;">SCORE: <span id="final-score">0</span></p>
+        <div id="new-record-input" style="display:none; margin: 10px 0;">
+            <input type="text" id="initials" maxlength="3" placeholder="ABC" style="width:80px; text-align:center; background:#000; color:#fff; border:1px solid var(--neon-blue); font-size:20px; text-transform:uppercase;">
+            <button onclick="saveHighscore()" style="padding:10px; background:var(--alien-green); border:none; font-weight:bold;">SAVE</button>
+        </div>
+        <table id="highscore-list-final" class="highscore-table"></table>
+        <button onclick="resetToMenu()" style="background:#fff; border:none; padding:12px; width:100%; border-radius:10px; font-weight:bold;">MENU</button>
+    </div>
+</div>
+
+<div id="game-container">
+    <div id="stats" style="position:absolute; top:20px; left:20px; color:var(--neon-blue); font-weight:bold;">SCORE: <span id="score-val">0</span></div>
+    <div id="base" style="position:absolute; right:0; top:0; width:5px; height:100%; background: var(--neon-blue);"></div>
+    <div id="ui-bottom">
+        <div id="display-val" class="display-val">-</div>
+        <div id="numpad-row" style="display:flex; gap:3px; flex:5;">
+            <div class="key" onclick="press('1')">1</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('3')">3</div><div class="key" onclick="press('4')">4</div><div class="key" onclick="press('5')">5</div>
+            <div class="key" onclick="press('6')">6</div><div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div><div class="key" onclick="press('0')">0</div>
+        </div>
+        <div class="key" style="background:#400; color:#f88; flex:0.7;" onclick="press('C')">X</div>
+        <div class="key" style="background:#0044cc; color:#fff; flex:1.5;" onclick="submit()">FIRE</div>
+    </div>
+</div>
+
+<script>
+    let selectedTables = [], monsters = [], score = 0, currentInput = "", gameActive = false, spawnTimeout;
+    let penaltyActive = false; let bossActive = false; let bossHP = 10; let baseSpeed = 1.1;
+    let useDivision = false;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const DB_KEY = 'SpaceTables_Final_v15';
+
+    const alienSvg = '<svg class="invader-svg" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
+    const bossSvg = '<svg class="boss-svg" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
+
+    function playSound(freq, type, duration, vol) {
+        const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(vol, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(g); g.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function createExplosion(x, y, color, amount = 15) {
+        for(let i=0; i<amount; i++) {
+            const d = document.createElement('div');
+            d.className = 'debris';
+            d.style.left = x + 'px'; d.style.top = y + 'px';
+            d.style.backgroundColor = color;
+            document.getElementById('game-container').appendChild(d);
+            const vx = (Math.random()-0.5)*15; const vy = (Math.random()-0.5)*15;
+            let opacity = 1;
+            const anim = setInterval(() => {
+                d.style.left = (parseFloat(d.style.left) + vx) + 'px';
+                d.style.top = (parseFloat(d.style.top) + vy) + 'px';
+                opacity -= 0.05; d.style.opacity = opacity;
+                if(opacity <= 0) { clearInterval(anim); d.remove(); }
+            }, 30);
+        }
+    }
+
+    function generateMathTask() {
+        const t = selectedTables[Math.floor(Math.random() * selectedTables.length)];
+        const n = Math.floor(Math.random() * 10) + 1;
+        
+        // Beslis of het een deelsom is (alleen als vinkje aan staat)
+        if (useDivision && Math.random() > 0.5) {
+            const product = t * n;
+            return { text: `${product}:${t}`, answer: n };
+        } else {
+            return { text: `${t}x${n}`, answer: t * n };
+        }
+    }
+
+    function renderHighscores(id, limit) {
+        const s = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+        let h = "";
+        for(let i=0; i<limit; i++) {
+            const e = s[i] || {name: "---", score: "0"};
+            h += `<tr><td>${i+1}.</td><td>${e.name}</td><td style='text-align:right'>${e.score}</td></tr>`;
+        }
+        document.getElementById(id).innerHTML = h;
+    }
+    renderHighscores('start-highscore-box', 3);
+
+    function toggleTable(num, btn) {
+        if(selectedTables.includes(num)) { selectedTables = selectedTables.filter(n => n !== num); btn.classList.remove('active'); }
+        else { selectedTables.push(num); btn.classList.add('active'); }
+    }
+
+    function press(k) {
+        if(k === 'C') currentInput = ""; else if(currentInput.length < 3) currentInput += k;
+        document.getElementById('display-val').innerText = currentInput || "-";
+    }
+
+    function startGame() {
+        if(!selectedTables.length) return alert("Selecteer tafels!");
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        baseSpeed = parseFloat(document.getElementById('speed-select').value);
+        useDivision = document.getElementById('check-division').checked;
+        score = 0; monsters = []; bossActive = false; bossHP = 10;
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        document.getElementById('score-val').innerText = "0";
+        gameActive = true; spawn(); update();
+    }
+
+    function spawn() {
+        if(!gameActive || bossActive) return;
+        if(score >= 500) { startBossFight(); return; }
+
+        const task = generateMathTask();
+        const isRainbowChance = (selectedTables.length === 1 && selectedTables[0] === 1) ? 0 : 0.12;
+        
+        const m = {
+            x: -70, y: Math.random() * (window.innerHeight - 250) + 50,
+            answer: task.answer, 
+            isRainbow: Math.random() < isRainbowChance,
+            stage: 1, element: document.createElement('div')
+        };
+        m.element.className = 'invader' + (m.isRainbow ? ' rainbow' : '');
+        m.element.innerHTML = `<div class="math-bubble">${task.text}</div>${alienSvg}`;
+        m.element.style.top = m.y + 'px';
+        document.getElementById('game-container').appendChild(m.element);
+        monsters.push(m);
+        spawnTimeout = setTimeout(spawn, Math.max(1000, 4500 - (score * 8)));
+    }
+
+    function startBossFight() {
+        bossActive = true;
+        monsters.forEach(m => m.element.remove()); monsters = [];
+        const b = {
+            x: -250, y: window.innerHeight/2 - 90,
+            element: document.createElement('div'),
+            hp: 10
+        };
+        b.element.className = 'boss';
+        b.element.innerHTML = `${bossSvg}<div class="math-bubble" id="boss-math"></div><div class="boss-hp"><div id="boss-hp-fill"></div></div>`;
+        b.element.style.top = b.y + 'px';
+        document.getElementById('game-container').appendChild(b.element);
+        monsters.push(b);
+        generateBossSum();
+    }
+
+    function generateBossSum() {
+        const task = generateMathTask();
+        monsters[0].answer = task.answer;
+        document.getElementById('boss-math').innerText = task.text;
+    }
+
+    function submit() {
+        if(!gameActive || currentInput === "") return;
+        const val = parseInt(currentInput);
+        let foundIdx = -1; let maxX = -1;
+        monsters.forEach((m, i) => { if(m.answer === val && (bossActive || m.x > maxX)) { maxX = m.x; foundIdx = i; } });
+
+        if(foundIdx !== -1) {
+            const m = monsters[foundIdx];
+            playSound(800, 'square', 0.1, 0.1);
+            
+            if(bossActive) {
+                bossHP--;
+                document.getElementById('boss-hp-fill').style.width = (bossHP * 10) + '%';
+                createExplosion(m.x + 100, m.y + 75, '#ff0044', 20);
+                playSound(150, 'sawtooth', 0.2, 0.3);
+                if(bossHP <= 0) {
+                    createExplosion(m.x + 100, m.y + 75, '#ff0044', 100);
+                    m.element.remove(); playSound(100, 'sawtooth', 1.0, 0.5);
+                    score += 500; endGame(true);
+                } else { generateBossSum(); }
+            } else if(m.isRainbow && m.stage === 1) {
+                m.stage = 2;
+                const nextTask = generateMathTask();
+                m.answer = nextTask.answer;
+                m.element.querySelector('.math-bubble').innerText = nextTask.text;
+                m.element.querySelector('.math-bubble').classList.add('second-stage');
+                createExplosion(m.x + 30, m.y + 30, '#fff', 10);
+            } else {
+                const laser = document.createElement('div'); laser.className = 'laser-beam';
+                laser.style.width = (window.innerWidth - m.x - 20) + "px";
+                laser.style.top = (m.y + 40) + "px"; laser.style.right = "5px";
+                document.getElementById('game-container').appendChild(laser);
+                setTimeout(() => {
+                    laser.remove();
+                    if(m.isRainbow) {
+                        playSound(100, 'sawtooth', 0.4, 0.3);
+                        monsters.forEach(o => {
+                            createExplosion(o.x + 30, o.y + 30, '#00d2ff', 20);
+                            o.element.remove();
+                        });
+                        score += (monsters.length * 10);
+                        monsters = [];
+                    } else {
+                        playSound(150, 'sawtooth', 0.2, 0.2);
+                        createExplosion(m.x + 30, m.y + 30, '#0f0', 20);
+                        m.element.remove(); monsters.splice(foundIdx, 1); score += 10;
+                    }
+                    document.getElementById('score-val').innerText = score;
+                }, 80);
+            }
+        } else {
+            playSound(120, 'triangle', 0.4, 0.4);
+            document.getElementById('game-container').style.background = '#400';
+            penaltyActive = true;
+            setTimeout(() => { document.getElementById('game-container').style.background = '#000'; penaltyActive = false; }, 500);
+        }
+        currentInput = ""; press('C');
+    }
+
+    function update() {
+        if(!gameActive) return;
+        let speed = (baseSpeed + (score / 3500)) * (penaltyActive ? 6 : 1);
+        let bossSpeed = (baseSpeed * 0.4) * (penaltyActive ? 6 : 1);
+
+        monsters.forEach(m => {
+            m.x += bossActive ? bossSpeed : speed;
+            m.element.style.left = m.x + 'px';
+            if(m.x > window.innerWidth - (bossActive ? 220 : 65)) endGame(false);
+        });
+        requestAnimationFrame(update);
+    }
+
+    function endGame(win) {
+        gameActive = false; clearTimeout(spawnTimeout);
+        document.getElementById('game-over-screen').style.display = 'flex';
+        document.getElementById('end-title').innerText = win ? "BAAS VERSLAGEN!" : "BASIS VERWOEST";
+        document.getElementById('end-title').style.color = win ? "#0f0" : "#f04";
+        document.getElementById('final-score').innerText = score;
+        const s = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+        if(score > 0 && (s.length < 10 || score > (s[s.length-1]?.score || 0))) document.getElementById('new-record-input').style.display = 'block';
+        renderHighscores('highscore-list-final', 10);
+    }
+
+    function saveHighscore() {
+        document.activeElement.blur();
+        const n = document.getElementById('initials').value.toUpperCase().trim() || "AAA";
+        let s = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+        s.push({name: n, score: score}); s.sort((a,b) => b.score - a.score);
+        localStorage.setItem(DB_KEY, JSON.stringify(s.slice(0, 10)));
+        resetToMenu();
+    }
+
+    function resetToMenu() {
+        monsters.forEach(m => m.element.remove()); monsters = [];
+        document.getElementById('game-over-screen').style.display = 'none';
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'flex';
+        renderHighscores('start-highscore-box', 3);
+    }
+</script>
+</body>
+</html>
