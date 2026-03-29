@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Space Tables: The Ultimate Boss</title>
+    <title>Space Tables: Red Boss Revenge</title>
     <style>
-        :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; }
+        :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; --boss-red: #ff0000; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; background-color: #000; position: fixed; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
         
         #landscape-guard { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #050510; color: #fff; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         @media screen and (orientation: portrait) { #landscape-guard { display: flex; } }
 
-        #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: radial-gradient(circle at center, #1b2735 0%, #000 100%); overflow: hidden; transition: transform 0.1s; }
+        #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: radial-gradient(circle at center, #1b2735 0%, #000 100%); overflow: hidden; }
         
-        /* Mega Laser */
         .laser-beam { position: absolute; height: 14px; background: #fff; border-radius: 10px; box-shadow: 0 0 20px 5px var(--neon-blue), 0 0 40px 10px #fff; z-index: 8; transform-origin: right center; pointer-events: none; }
-        .debris { position: absolute; width: 6px; height: 6px; z-index: 25; pointer-events: none; }
+        .debris { position: absolute; width: 6px; height: 6px; z-index: 25; pointer-events: none; border-radius: 1px; }
         
         #victory-announcement { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 50px; font-weight: bold; text-align: center; text-shadow: 0 0 20px var(--neon-blue); z-index: 50; display: none; pointer-events: none; white-space: pre-wrap; }
 
@@ -23,23 +22,22 @@
         .invader-svg { width: 45px; height: 35px; fill: var(--alien-green); filter: drop-shadow(0 0 5px var(--alien-green)); }
         .math-bubble { background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 16px; font-weight: 900; margin-bottom: 4px; border: 1px solid #000; }
 
-        /* Rainbow & Stage 2 */
         .rainbow .invader-svg { animation: rainbowAnim 0.3s infinite linear; }
-        @keyframes rainbowAnim {
-            0% { fill: #f00; } 33% { fill: #0f0; } 66% { fill: #00f; } 100% { fill: #f00; }
-        }
+        @keyframes rainbowAnim { 0% { fill: #f00; } 33% { fill: #0f0; } 66% { fill: #00f; } 100% { fill: #f00; } }
         .math-bubble.stage2 { background: #ff00ff !important; color: #fff !important; border: 2px solid #fff; }
 
-        .boss { position: absolute; width: 220px; height: 180px; z-index: 10; display: flex; flex-direction: column; align-items: center; }
-        .boss-svg { width: 180px; height: 120px; fill: var(--neon-pink); filter: drop-shadow(0 0 20px var(--neon-pink)); }
-        .boss-hp { width: 100%; height: 12px; background: #333; border: 2px solid #fff; margin-top: 10px; border-radius: 6px; overflow: hidden; }
-        #boss-hp-fill { width: 100%; height: 100%; background: var(--neon-pink); transition: width 0.3s; }
+        /* De Grote Rode Baas */
+        .boss { position: absolute; width: 250px; height: 200px; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+        .boss-svg { width: 200px; height: 140px; fill: var(--boss-red); filter: drop-shadow(0 0 30px var(--boss-red)); }
+        .boss-hp { width: 100%; height: 15px; background: #333; border: 2px solid #fff; margin-top: 10px; border-radius: 8px; overflow: hidden; }
+        #boss-hp-fill { width: 100%; height: 100%; background: var(--boss-red); transition: width 0.3s; }
 
-        #abort-btn { position: absolute; top: 15px; right: 20px; z-index: 100; background: var(--neon-pink); color: #fff; border: none; padding: 10px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; font-family: inherit; }
+        /* Abort Knop geforceerd bovenop */
+        #abort-btn { position: absolute; top: 15px; right: 20px; z-index: 10000; background: var(--neon-pink); color: #fff; border: 2px solid #fff; padding: 10px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; font-family: inherit; box-shadow: 0 0 10px rgba(255,0,0,0.5); }
 
         #ui-bottom { position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; background: #111; border-top: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: space-evenly; padding: 5px; z-index: 9999; }
         .display-val { width: 60px; text-align: center; font-size: 28px; color: #fff; font-weight: bold; border-right: 2px solid #333; }
-        .key { flex: 1; margin: 2px; height: 65px; background: #222; border: 1px solid var(--neon-blue); color: var(--neon-blue); font-size: 22px; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; }
+        .key { flex: 1; margin: 3px; height: 65px; background: #222; border: 1px solid var(--neon-blue); color: var(--neon-blue); font-size: 22px; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; }
         .key:active { background: var(--neon-blue); color: #000; }
 
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; }
@@ -54,7 +52,7 @@
 
 <div id="landscape-guard">
     <h2 style="color: var(--neon-blue);">DRAAI JE TOESTEL</h2>
-    <p>Landscape modus vereist.</p>
+    <p>Landscape modus vereist voor gevechtsleiding.</p>
 </div>
 
 <div id="menu-screen" class="overlay">
@@ -73,9 +71,10 @@
             <button class="table-btn" onclick="toggleTable(9, this)">9</button>
             <button class="table-btn" onclick="toggleTable(10, this)">10</button>
         </div>
-        <div style="margin: 10px 0; color: #fff; font-size: 13px;">
-            <label><input type="checkbox" id="check-division"> DEELTAFELS</label>
-            <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue); margin-left:10px;">
+        <div style="margin: 10px 0; color: #fff; font-size: 13px; display: flex; justify-content: center; gap: 10px; align-items: center;">
+            <label><input type="checkbox" id="check-division"> DEEL</label>
+            <label><input type="checkbox" id="check-nosound"> NO SOUND</label>
+            <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue);">
                 <option value="0.3">SLOWMO</option>
                 <option value="0.7">REKRUUT</option>
                 <option value="1.1" selected>SOLDAAT</option>
@@ -100,8 +99,8 @@
 </div>
 
 <div id="game-container">
-    <div id="victory-announcement">OVERWINNING!</div>
     <button id="abort-btn" onclick="resetToMenu()">STOP [X]</button>
+    <div id="victory-announcement">OVERWINNING!</div>
     <div id="stats" style="position:absolute; top:20px; left:20px; color:var(--neon-blue); font-weight:bold; z-index:100;">SCORE: <span id="score-val">0</span></div>
     <div id="base" style="position:absolute; right:0; top:0; width:5px; height:100%; background: var(--neon-blue);"></div>
     <div id="ui-bottom">
@@ -117,9 +116,9 @@
 
 <script>
     let selectedTables = [], monsters = [], score = 0, currentInput = "", gameActive = false, spawnTimeout;
-    let penaltyActive = false, bossActive = false, bossHP = 10, baseSpeed = 1.1, useDivision = false;
-    let taskPool = [], audioCtx, bossMusicInterval;
-    const DB_KEY = 'SpaceTables_Final_v26';
+    let penaltyActive = false, bossActive = false, bossHP = 10, baseSpeed = 1.1, useDivision = false, noSound = false;
+    let taskPool = [], audioCtx, bossMusicTimeout;
+    const DB_KEY = 'SpaceTables_Final_v27';
 
     const alienShapes = [
         '<svg class="invader-svg" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>',
@@ -130,7 +129,7 @@
     function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === 'suspended') audioCtx.resume(); }
 
     function playLaserSound() {
-        initAudio(); const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        if(noSound) return; initAudio(); const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.2);
         g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
@@ -138,13 +137,15 @@
     }
 
     function playImperialMarch() {
-        initAudio();
-        const notes = [
+        if(noSound || !bossActive) return; initAudio();
+        const march = [
             {f:440, d:0.5}, {f:440, d:0.5}, {f:440, d:0.5}, {f:349, d:0.35}, {f:523, d:0.15},
-            {f:440, d:0.5}, {f:349, d:0.35}, {f:523, d:0.15}, {f:440, d:1.0}
+            {f:440, d:0.5}, {f:349, d:0.35}, {f:523, d:0.15}, {f:440, d:1.0},
+            {f:659, d:0.5}, {f:659, d:0.5}, {f:659, d:0.5}, {f:698, d:0.35}, {f:523, d:0.15},
+            {f:415, d:0.5}, {f:349, d:0.35}, {f:523, d:0.15}, {f:440, d:1.0}
         ];
         let time = audioCtx.currentTime;
-        notes.forEach(n => {
+        march.forEach(n => {
             const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
             osc.type = 'square'; osc.frequency.setValueAtTime(n.f, time);
             g.gain.setValueAtTime(0.08, time); g.gain.exponentialRampToValueAtTime(0.01, time + n.d);
@@ -152,13 +153,10 @@
             osc.start(time); osc.stop(time + n.d);
             time += n.d;
         });
-        if(bossActive) bossMusicInterval = setTimeout(playImperialMarch, 4000);
+        bossMusicTimeout = setTimeout(playImperialMarch, 8000);
     }
 
     function createExplosion(x, y, color, amount = 15) {
-        const container = document.getElementById('game-container');
-        container.style.transform = `translate(${(Math.random()-0.5)*15}px, ${(Math.random()-0.5)*15}px)`;
-        setTimeout(() => container.style.transform = 'translate(0,0)', 80);
         for(let i=0; i<amount; i++) {
             const d = document.createElement('div'); d.className = 'debris';
             d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.backgroundColor = color;
@@ -190,13 +188,6 @@
         return taskObj.isDiv ? { text: `${taskObj.t * taskObj.n}:${taskObj.t}`, answer: taskObj.n, table: taskObj.t, isDiv: true } : { text: `${taskObj.t}x${taskObj.n}`, answer: taskObj.t * taskObj.n, table: taskObj.t, isDiv: false };
     }
 
-    function calculateTaskPoints(tableNum, isDivision) {
-        let basePts = (tableNum === 1 || tableNum === 10) ? 1 : tableNum;
-        let selectionBonus = selectedTables.length;
-        let mult = baseSpeed <= 0.3 ? 1 : baseSpeed <= 0.7 ? 2 : baseSpeed <= 1.1 ? 3 : 5;
-        return (basePts + selectionBonus + (isDivision ? 2 : 0)) * mult;
-    }
-
     function toggleTable(num, btn) {
         if(selectedTables.includes(num)) { selectedTables = selectedTables.filter(n => n !== num); btn.classList.remove('active'); }
         else { selectedTables.push(num); btn.classList.add('active'); }
@@ -206,11 +197,17 @@
 
     function startGame() {
         if(!selectedTables.length) return alert("Selecteer tafels!");
-        initAudio(); baseSpeed = parseFloat(document.getElementById('speed-select').value); useDivision = document.getElementById('check-division').checked;
+        initAudio(); 
+        baseSpeed = parseFloat(document.getElementById('speed-select').value);
+        useDivision = document.getElementById('check-division').checked;
+        noSound = document.getElementById('check-nosound').checked;
         initializeTaskPool(); score = 0; monsters = []; bossActive = false; bossHP = 10;
-        document.getElementById('menu-screen').style.display = 'none'; document.getElementById('game-container').style.display = 'block';
-        document.getElementById('stats').style.display = 'block'; document.getElementById('victory-announcement').style.display = 'none';
-        document.getElementById('score-val').innerText = "0"; gameActive = true; spawn(); update();
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        document.getElementById('stats').style.display = 'block';
+        document.getElementById('victory-announcement').style.display = 'none';
+        document.getElementById('score-val').innerText = "0";
+        gameActive = true; spawn(); update();
     }
 
     function spawn() {
@@ -219,9 +216,8 @@
         if(score >= threshold) { startBossFight(); return; }
         const task = generateMathTask();
         const m = { x: -70, y: Math.random() * (window.innerHeight - 250) + 50, answer: task.answer, table: task.table, isDiv: task.isDiv, isRainbow: Math.random() < 0.12, stage: 1, element: document.createElement('div') };
-        const shape = alienShapes[Math.floor(Math.random() * alienShapes.length)];
         m.element.className = 'invader' + (m.isRainbow ? ' rainbow' : '');
-        m.element.innerHTML = `<div class="math-bubble">${task.text}</div>${shape}`;
+        m.element.innerHTML = `<div class="math-bubble">${task.text}</div>${alienShapes[Math.floor(Math.random()*3)]}`;
         m.element.style.top = m.y + 'px';
         document.getElementById('game-container').appendChild(m.element);
         monsters.push(m);
@@ -231,9 +227,9 @@
     function startBossFight() {
         bossActive = true; playImperialMarch();
         monsters.forEach(m => m.element.remove()); monsters = [];
-        const b = { x: -250, y: window.innerHeight/2 - 90, element: document.createElement('div'), hp: 10 };
+        const b = { x: -250, y: window.innerHeight/2 - 100, element: document.createElement('div'), hp: 10 };
         b.element.className = 'boss';
-        b.element.innerHTML = `<svg style="width:180px;height:120px;fill:var(--neon-pink)" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg><div class="math-bubble" id="boss-math"></div><div class="boss-hp"><div id="boss-hp-fill"></div></div>`;
+        b.element.innerHTML = `<svg class="boss-svg" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg><div class="math-bubble" id="boss-math"></div><div class="boss-hp"><div id="boss-hp-fill"></div></div>`;
         b.element.style.top = b.y + 'px';
         document.getElementById('game-container').appendChild(b.element);
         monsters.push(b); generateBossSum();
@@ -245,13 +241,12 @@
         if(!gameActive || currentInput === "") return;
         const val = parseInt(currentInput); let foundIdx = -1, maxX = -1;
         monsters.forEach((m, i) => { if(m.answer === val && (bossActive || m.x > maxX)) { maxX = m.x; foundIdx = i; } });
-        
         if(foundIdx !== -1) {
             const m = monsters[foundIdx]; playLaserSound();
             if(bossActive) {
                 bossHP--; document.getElementById('boss-hp-fill').style.width = (bossHP * 10) + '%';
-                createExplosion(m.x + 100, m.y + 75, '#ff0044', 30);
-                score += calculateTaskPoints(m.currentTable, m.currentIsDiv);
+                createExplosion(m.x + 120, m.y + 70, '#ff0000', 30);
+                score += (m.currentTable === 1 || m.currentTable === 10 ? 1 : m.currentTable) * (baseSpeed <= 0.3 ? 1 : baseSpeed <= 0.7 ? 2 : baseSpeed <= 1.1 ? 3 : 5);
                 document.getElementById('score-val').innerText = score;
                 if(bossHP <= 0) bossVictorySequence(m); else generateBossSum();
             } else if(m.isRainbow && m.stage === 1) {
@@ -267,10 +262,13 @@
                 setTimeout(() => {
                     laser.remove();
                     if(m.isRainbow) {
-                        monsters.forEach(o => { createExplosion(o.x + 30, o.y + 30, '#00d2ff', 25); score += calculateTaskPoints(o.table || 1, o.isDiv || false); o.element.remove(); });
-                        monsters = [];
+                        monsters.forEach(o => { createExplosion(o.x + 30, o.y + 30, '#00d2ff', 25); o.element.remove(); });
+                        score += 50; monsters = [];
                     } else {
-                        createExplosion(m.x + 30, m.y + 30, '#0f0', 20); score += calculateTaskPoints(m.table, m.isDiv);
+                        createExplosion(m.x + 30, m.y + 30, '#0f0', 20);
+                        let basePts = (m.table === 1 || m.table === 10) ? 1 : m.table;
+                        let mult = baseSpeed <= 0.3 ? 1 : baseSpeed <= 0.7 ? 2 : baseSpeed <= 1.1 ? 3 : 5;
+                        score += (basePts + selectedTables.length + (m.isDiv ? 2 : 0)) * mult;
                         m.element.remove(); monsters.splice(foundIdx, 1);
                     }
                     document.getElementById('score-val').innerText = score;
@@ -284,12 +282,12 @@
     }
 
     function bossVictorySequence(boss) {
-        gameActive = false; clearTimeout(bossMusicInterval);
+        gameActive = false; clearTimeout(bossMusicTimeout);
         const v = document.getElementById('victory-announcement');
         v.innerText = "OVERWINNING!\nSCORE: " + score; v.style.display = 'block';
         let count = 0;
         const interval = setInterval(() => {
-            createExplosion(boss.x + Math.random()*200, boss.y + Math.random()*150, '#ff0044', 35);
+            createExplosion(boss.x + Math.random()*200, boss.y + Math.random()*150, '#ff0000', 35);
             if(count++ > 15) { clearInterval(interval); boss.element.remove(); setTimeout(() => endGame(true), 1500); }
         }, 150);
     }
@@ -299,13 +297,13 @@
         let speed = (baseSpeed + (score / 25000)) * (penaltyActive ? 6 : 1);
         monsters.forEach(m => {
             m.x += bossActive ? (baseSpeed * 0.3) : speed; m.element.style.left = m.x + 'px';
-            if(m.x > window.innerWidth - (bossActive ? 220 : 65)) endGame(false);
+            if(m.x > window.innerWidth - (bossActive ? 250 : 65)) endGame(false);
         });
         requestAnimationFrame(update);
     }
 
     function endGame(win) {
-        gameActive = false; clearTimeout(spawnTimeout); clearTimeout(bossMusicInterval);
+        gameActive = false; clearTimeout(spawnTimeout); clearTimeout(bossMusicTimeout);
         document.getElementById('game-over-screen').style.display = 'flex';
         document.getElementById('end-title').innerText = win ? "BAAS VERSLAGEN!" : "BASIS VERWOEST";
         document.getElementById('final-score').innerText = score;
@@ -328,7 +326,7 @@
     }
 
     function resetToMenu() {
-        gameActive = false; clearTimeout(spawnTimeout); clearTimeout(bossMusicInterval);
+        gameActive = false; clearTimeout(spawnTimeout); clearTimeout(bossMusicTimeout);
         monsters.forEach(m => m.element && m.element.remove()); monsters = [];
         const b = document.querySelector('.boss'); if(b) b.remove();
         document.getElementById('game-over-screen').style.display = 'none';
