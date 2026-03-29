@@ -3,21 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Space Tables: Advanced Scoring</title>
+    <title>Space Tables: Epic Victory Edition</title>
     <style>
         :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; background-color: #000; position: fixed; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
         
-        #landscape-error {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
-            background: #050510; color: #fff; z-index: 99999;
-            display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-        }
-        @media screen and (orientation: portrait) { #landscape-error { display: flex; } }
+        #landscape-guard { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #050510; color: #fff; z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        @media screen and (orientation: portrait) { #landscape-guard { display: flex; } }
 
-        #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: #000; overflow: hidden; transition: background 0.1s; }
+        #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: #000; overflow: hidden; }
         .laser-beam { position: absolute; height: 6px; background: #fff; box-shadow: 0 0 15px 5px var(--neon-blue); z-index: 8; transform-origin: right center; pointer-events: none; }
-        .debris { position: absolute; width: 5px; height: 5px; z-index: 20; pointer-events: none; }
+        .debris { position: absolute; width: 6px; height: 6px; z-index: 25; pointer-events: none; border-radius: 1px; }
+        
+        /* Grote Victory Score */
+        #victory-announcement {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #fff; font-size: 60px; font-weight: bold; text-align: center;
+            text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
+            z-index: 1000; display: none; pointer-events: none;
+            animation: score-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes score-pop { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+
         .invader { position: absolute; width: 60px; height: 55px; display: flex; flex-direction: column; align-items: center; z-index: 5; }
         .invader-svg { width: 40px; height: 30px; fill: var(--alien-green); }
         .math-bubble { background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 16px; font-weight: 900; margin-bottom: 4px; border: 1px solid #000; white-space: nowrap; }
@@ -42,12 +49,11 @@
         .table-btn { padding: 10px; border: 2px solid var(--neon-blue); background: transparent; color: white; border-radius: 8px; font-size: 16px; font-family: inherit; }
         .table-btn.active { background: var(--neon-blue); color: #000; font-weight: bold; }
         .highscore-table { width: 100%; font-size: 11px; color: var(--neon-blue); margin: 10px 0; border-collapse: collapse; text-align: left; }
-        .mode-select { margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 20px; color: #fff; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="landscape-error">
+<div id="landscape-guard">
     <h2 style="color: var(--neon-blue);">DRAAI JE TOESTEL</h2>
     <p>Landscape modus vereist.</p>
 </div>
@@ -68,9 +74,9 @@
             <button class="table-btn" onclick="toggleTable(9, this)">9</button>
             <button class="table-btn" onclick="toggleTable(10, this)">10</button>
         </div>
-        <div class="mode-select">
-            <label><input type="checkbox" id="check-division"> DEELTAFELS (+5 ptn)</label>
-            <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue);">
+        <div style="margin: 10px 0; color: #fff; font-size: 13px;">
+            <label><input type="checkbox" id="check-division"> DEELTAFELS (+2 ptn)</label>
+            <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue); margin-left:10px;">
                 <option value="0.3">SLOWMO (x1)</option>
                 <option value="0.7">REKRUUT (x2)</option>
                 <option value="1.1" selected>SOLDAAT (x3)</option>
@@ -95,6 +101,7 @@
 </div>
 
 <div id="game-container">
+    <div id="victory-announcement">SCORE: 0</div>
     <button id="abort-btn" onclick="resetToMenu()">STOP [X]</button>
     <div id="stats" style="position:absolute; top:20px; left:20px; color:var(--neon-blue); font-weight:bold;">SCORE: <span id="score-val">0</span></div>
     <div id="base" style="position:absolute; right:0; top:0; width:5px; height:100%; background: var(--neon-blue);"></div>
@@ -113,7 +120,7 @@
     let selectedTables = [], monsters = [], score = 0, currentInput = "", gameActive = false, spawnTimeout;
     let penaltyActive = false, bossActive = false, bossHP = 10, baseSpeed = 1.1, useDivision = false;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const DB_KEY = 'SpaceTables_Final_v19';
+    const DB_KEY = 'SpaceTables_Final_v20';
 
     const alienSvg = '<svg class="invader-svg" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
     const bossSvg = '<svg style="width:180px;height:120px;fill:var(--neon-pink)" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
@@ -128,25 +135,23 @@
     function createExplosion(x, y, color, amount = 15) {
         for(let i=0; i<amount; i++) {
             const d = document.createElement('div'); d.className = 'debris';
-            d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.backgroundColor = color;
+            d.style.left = x + 'px'; d.style.top = y + 'px';
+            d.style.backgroundColor = color;
             document.getElementById('game-container').appendChild(d);
-            const vx = (Math.random()-0.5)*15, vy = (Math.random()-0.5)*15;
+            const vx = (Math.random()-0.5)*20, vy = (Math.random()-0.5)*20;
             let opacity = 1;
             const anim = setInterval(() => {
                 d.style.left = (parseFloat(d.style.left) + vx) + 'px';
                 d.style.top = (parseFloat(d.style.top) + vy) + 'px';
-                opacity -= 0.05; d.style.opacity = opacity;
+                opacity -= 0.04; d.style.opacity = opacity;
                 if(opacity <= 0) { clearInterval(anim); d.remove(); }
             }, 30);
         }
     }
 
-    // --- NIEUWE LOGICA VOOR PUNTEN EN BOSS THRESHOLD ---
     function calculateTaskPoints(tableNum, isDivision) {
-        let pts = tableNum; // Tafel van 1 = 1pt, tafel van 10 = 10pt
-        if(isDivision) pts += 5; // Bonus voor deeltafels
-        
-        // Niveau multiplier
+        let pts = tableNum; 
+        if(isDivision) pts += 2; // Deeltafels nu +2 punten
         if(baseSpeed <= 0.3) return pts * 1;
         if(baseSpeed <= 0.7) return pts * 2;
         if(baseSpeed <= 1.1) return pts * 3;
@@ -164,11 +169,8 @@
         const t = selectedTables[Math.floor(Math.random() * selectedTables.length)];
         const n = Math.floor(Math.random() * 10) + 1;
         const isDiv = useDivision && Math.random() > 0.5;
-        if (isDiv) {
-            return { text: `${t*n}:${t}`, answer: n, table: t, isDiv: true };
-        } else {
-            return { text: `${t}x${n}`, answer: t * n, table: t, isDiv: false };
-        }
+        if (isDiv) return { text: `${t*n}:${t}`, answer: n, table: t, isDiv: true };
+        else return { text: `${t}x${n}`, answer: t * n, table: t, isDiv: false };
     }
 
     function renderHighscores(id, limit) {
@@ -187,10 +189,7 @@
         else { selectedTables.push(num); btn.classList.add('active'); }
     }
 
-    function press(k) {
-        if(k === 'C') currentInput = ""; else if(currentInput.length < 3) currentInput += k;
-        document.getElementById('display-val').innerText = currentInput || "-";
-    }
+    function press(k) { if(k === 'C') currentInput = ""; else if(currentInput.length < 3) currentInput += k; document.getElementById('display-val').innerText = currentInput || "-"; }
 
     function startGame() {
         if(!selectedTables.length) return alert("Selecteer tafels!");
@@ -200,6 +199,8 @@
         score = 0; monsters = []; bossActive = false; bossHP = 10;
         document.getElementById('menu-screen').style.display = 'none';
         document.getElementById('game-container').style.display = 'block';
+        document.getElementById('stats').style.display = 'block';
+        document.getElementById('victory-announcement').style.display = 'none';
         document.getElementById('score-val').innerText = "0";
         gameActive = true; spawn(); update();
     }
@@ -208,18 +209,13 @@
         if(!gameActive || bossActive) return;
         if(score >= getBossThreshold()) { startBossFight(); return; }
         const task = generateMathTask();
-        const m = { 
-            x: -70, y: Math.random() * (window.innerHeight - 250) + 50, 
-            answer: task.answer, table: task.table, isDiv: task.isDiv,
-            isRainbow: (selectedTables[0] === 1 && selectedTables.length === 1) ? false : Math.random() < 0.12, 
-            stage: 1, element: document.createElement('div') 
-        };
+        const m = { x: -70, y: Math.random() * (window.innerHeight - 250) + 50, answer: task.answer, table: task.table, isDiv: task.isDiv, isRainbow: (selectedTables[0] === 1 && selectedTables.length === 1) ? false : Math.random() < 0.12, stage: 1, element: document.createElement('div') };
         m.element.className = 'invader' + (m.isRainbow ? ' rainbow' : '');
         m.element.innerHTML = `<div class="math-bubble">${task.text}</div>${alienSvg}`;
         m.element.style.top = m.y + 'px';
         document.getElementById('game-container').appendChild(m.element);
         monsters.push(m);
-        spawnTimeout = setTimeout(spawn, Math.max(1000, 4500 - (score/20 * 5)));
+        spawnTimeout = setTimeout(spawn, Math.max(1000, 4500 - (score / 15)));
     }
 
     function startBossFight() {
@@ -232,11 +228,7 @@
         monsters.push(b); generateBossSum();
     }
 
-    function generateBossSum() {
-        const task = generateMathTask(); monsters[0].answer = task.answer;
-        monsters[0].currentTable = task.table; monsters[0].currentIsDiv = task.isDiv;
-        document.getElementById('boss-math').innerText = task.text;
-    }
+    function generateBossSum() { const task = generateMathTask(); monsters[0].answer = task.answer; monsters[0].currentTable = task.table; monsters[0].currentIsDiv = task.isDiv; document.getElementById('boss-math').innerText = task.text; }
 
     function submit() {
         if(!gameActive || currentInput === "") return;
@@ -251,13 +243,9 @@
                 createExplosion(m.x + 100, m.y + 75, '#ff0044', 20);
                 score += calculateTaskPoints(m.currentTable, m.currentIsDiv);
                 document.getElementById('score-val').innerText = score;
-                if(bossHP <= 0) {
-                    createExplosion(m.x + 100, m.y + 75, '#ff0044', 100);
-                    m.element.remove(); score += 500; endGame(true);
-                } else { generateBossSum(); }
+                if(bossHP <= 0) { bossVictorySequence(m); } else { generateBossSum(); }
             } else if(m.isRainbow && m.stage === 1) {
-                m.stage = 2; const next = generateMathTask(); m.answer = next.answer;
-                m.table = next.table; m.isDiv = next.isDiv;
+                m.stage = 2; const next = generateMathTask(); m.answer = next.answer; m.table = next.table; m.isDiv = next.isDiv;
                 m.element.querySelector('.math-bubble').innerText = next.text;
                 m.element.querySelector('.math-bubble').style.backgroundColor = "#ff00ff";
                 createExplosion(m.x + 30, m.y + 30, '#fff', 10);
@@ -270,11 +258,7 @@
                     laser.remove();
                     if(m.isRainbow) {
                         playSound(100, 'sawtooth', 0.4, 0.3);
-                        monsters.forEach(o => { 
-                            createExplosion(o.x + 30, o.y + 30, '#00d2ff', 20); 
-                            score += calculateTaskPoints(o.table || 1, o.isDiv || false);
-                            o.element.remove(); 
-                        });
+                        monsters.forEach(o => { createExplosion(o.x + 30, o.y + 30, '#00d2ff', 20); score += calculateTaskPoints(o.table || 1, o.isDiv || false); o.element.remove(); });
                         monsters = [];
                     } else {
                         playSound(150, 'sawtooth', 0.2, 0.2); createExplosion(m.x + 30, m.y + 30, '#0f0', 20);
@@ -293,6 +277,32 @@
         currentInput = ""; press('C');
     }
 
+    function bossVictorySequence(boss) {
+        gameActive = false; // Stop beweging en input
+        playSound(60, 'sawtooth', 2.0, 0.5);
+        
+        // Meerdere explosies op de baas
+        let count = 0;
+        const interval = setInterval(() => {
+            createExplosion(boss.x + Math.random()*200, boss.y + Math.random()*150, '#ff0044', 30);
+            playSound(100 + Math.random()*200, 'sawtooth', 0.2, 0.3);
+            count++;
+            if(count > 15) { 
+                clearInterval(interval); 
+                createExplosion(boss.x + 100, boss.y + 75, '#fff', 150); 
+                boss.element.remove();
+            }
+        }, 150);
+
+        // Toon de score in het midden
+        const v = document.getElementById('victory-announcement');
+        v.innerText = "OVERWINNING!\nSCORE: " + score;
+        v.style.display = 'block';
+        document.getElementById('stats').style.display = 'none';
+
+        setTimeout(() => { endGame(true); }, 3500);
+    }
+
     function update() {
         if(!gameActive) return;
         let speed = (baseSpeed + (score / 15000)) * (penaltyActive ? 6 : 1);
@@ -306,6 +316,7 @@
 
     function endGame(win) {
         gameActive = false; clearTimeout(spawnTimeout);
+        document.getElementById('victory-announcement').style.display = 'none';
         document.getElementById('game-over-screen').style.display = 'flex';
         document.getElementById('end-title').innerText = win ? "BAAS VERSLAGEN!" : "BASIS VERWOEST";
         document.getElementById('end-title').style.color = win ? "#0f0" : "#f04";
@@ -329,4 +340,10 @@
         monsters.forEach(m => { if(m.element) m.element.remove(); }); monsters = [];
         const b = document.querySelector('.boss'); if(b) b.remove();
         document.getElementById('game-over-screen').style.display = 'none';
-        document
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'flex';
+        renderHighscores('start-highscore-box', 3);
+    }
+</script>
+</body>
+</html>
