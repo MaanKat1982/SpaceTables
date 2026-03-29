@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Space Tables: Smart Trainer</title>
+    <title>Space Tables: Selection Bonus Edition</title>
     <style>
         :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; background-color: #000; position: fixed; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
@@ -112,9 +112,9 @@
 <script>
     let selectedTables = [], monsters = [], score = 0, currentInput = "", gameActive = false, spawnTimeout;
     let penaltyActive = false, bossActive = false, bossHP = 10, baseSpeed = 1.1, useDivision = false;
-    let taskPool = []; // Pool om sommen bij te houden
+    let taskPool = [];
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const DB_KEY = 'SpaceTables_Final_v22';
+    const DB_KEY = 'SpaceTables_Final_v23';
 
     const alienSvg = '<svg class="invader-svg" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
     const bossSvg = '<svg style="width:180px;height:120px;fill:var(--neon-pink)" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
@@ -129,7 +129,8 @@
     function createExplosion(x, y, color, amount = 15) {
         for(let i=0; i<amount; i++) {
             const d = document.createElement('div'); d.className = 'debris';
-            d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.backgroundColor = color;
+            d.style.left = x + 'px'; d.style.top = y + 'px';
+            d.style.backgroundColor = color;
             document.getElementById('game-container').appendChild(d);
             const vx = (Math.random()-0.5)*20, vy = (Math.random()-0.5)*20;
             let opacity = 1;
@@ -142,7 +143,6 @@
         }
     }
 
-    // --- SMART TASK GENERATOR ---
     function initializeTaskPool() {
         taskPool = [];
         selectedTables.forEach(t => {
@@ -151,24 +151,30 @@
                 if(useDivision) taskPool.push({ t: t, n: n, isDiv: true });
             }
         });
-        // Shuffle pool
         taskPool.sort(() => Math.random() - 0.5);
     }
 
     function generateMathTask() {
         if(taskPool.length === 0) initializeTaskPool();
         const taskObj = taskPool.pop();
-        if(taskObj.isDiv) {
-            return { text: `${taskObj.t * taskObj.n}:${taskObj.t}`, answer: taskObj.n, table: taskObj.t, isDiv: true };
-        } else {
-            return { text: `${taskObj.t}x${taskObj.n}`, answer: taskObj.t * taskObj.n, table: taskObj.t, isDiv: false };
-        }
+        if(taskObj.isDiv) return { text: `${taskObj.t * taskObj.n}:${taskObj.t}`, answer: taskObj.n, table: taskObj.t, isDiv: true };
+        else return { text: `${taskObj.t}x${taskObj.n}`, answer: taskObj.t * taskObj.n, table: taskObj.t, isDiv: false };
     }
 
     function calculateTaskPoints(tableNum, isDivision) {
-        let pts = tableNum + (isDivision ? 2 : 0);
+        // Tafel van 1 én 10 zijn 1 punt waard
+        let basePts = (tableNum === 1 || tableNum === 10) ? 1 : tableNum;
+        
+        // Bonus per geselecteerde tafel (+1 per tafel)
+        let selectionBonus = selectedTables.length;
+        
+        // Deeltafel bonus (+2)
+        let divBonus = isDivision ? 2 : 0;
+        
+        // Moeilijkheids multiplier
         let mult = baseSpeed <= 0.3 ? 1 : baseSpeed <= 0.7 ? 2 : baseSpeed <= 1.1 ? 3 : 5;
-        return pts * mult;
+        
+        return (basePts + selectionBonus + divBonus) * mult;
     }
 
     function getBossThreshold() {
@@ -201,7 +207,7 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
         baseSpeed = parseFloat(document.getElementById('speed-select').value);
         useDivision = document.getElementById('check-division').checked;
-        initializeTaskPool(); // Maak pool klaar bij start
+        initializeTaskPool();
         score = 0; monsters = []; bossActive = false; bossHP = 10;
         document.getElementById('menu-screen').style.display = 'none';
         document.getElementById('game-container').style.display = 'block';
@@ -221,7 +227,7 @@
         m.element.style.top = m.y + 'px';
         document.getElementById('game-container').appendChild(m.element);
         monsters.push(m);
-        spawnTimeout = setTimeout(spawn, Math.max(1000, 4500 - (score / 20)));
+        spawnTimeout = setTimeout(spawn, Math.max(1000, 4500 - (score / 25)));
     }
 
     function startBossFight() {
@@ -255,7 +261,7 @@
                 createExplosion(m.x + 100, m.y + 75, '#ff0044', 20);
                 score += calculateTaskPoints(m.currentTable, m.currentIsDiv);
                 document.getElementById('score-val').innerText = score;
-                if(bossHP <= 0) { bossVictorySequence(m); } else { generateBossSum(); }
+                if(bossHP <= 0) bossVictorySequence(m); else generateBossSum();
             } else if(m.isRainbow && m.stage === 1) {
                 m.stage = 2; const next = generateMathTask(); m.answer = next.answer; m.table = next.table; m.isDiv = next.isDiv;
                 m.element.querySelector('.math-bubble').innerText = next.text;
@@ -269,6 +275,7 @@
                 setTimeout(() => {
                     laser.remove();
                     if(m.isRainbow) {
+                        playSound(100, 'sawtooth', 0.4, 0.3);
                         monsters.forEach(o => { createExplosion(o.x + 30, o.y + 30, '#00d2ff', 20); score += calculateTaskPoints(o.table || 1, o.isDiv || false); o.element.remove(); });
                         monsters = [];
                     } else {
@@ -302,7 +309,7 @@
 
     function update() {
         if(!gameActive) return;
-        let speed = (baseSpeed + (score / 20000)) * (penaltyActive ? 6 : 1);
+        let speed = (baseSpeed + (score / 25000)) * (penaltyActive ? 6 : 1);
         monsters.forEach(m => {
             m.x += bossActive ? (baseSpeed * 0.3) : speed; m.element.style.left = m.x + 'px';
             if(m.x > window.innerWidth - (bossActive ? 220 : 65)) endGame(false);
