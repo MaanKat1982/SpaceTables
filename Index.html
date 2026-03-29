@@ -3,59 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Space Tables: Landscape Guard</title>
+    <title>Space Tables: Advanced Scoring</title>
     <style>
         :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; background-color: #000; position: fixed; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
         
-        /* ALTIJD EERST DE LANDSCAPE CHECK */
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100dvh; 
-            overflow: hidden; background-color: #000; 
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        /* De melding die alles blokkeert */
-        #landscape-guard {
+        #landscape-error {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
             background: #050510; color: #fff; z-index: 99999;
-            display: none; flex-direction: column; align-items: center; 
-            justify-content: center; text-align: center; padding: 20px;
-            box-sizing: border-box;
+            display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center;
         }
+        @media screen and (orientation: portrait) { #landscape-error { display: flex; } }
 
-        .phone-icon {
-            width: 50px; height: 80px; border: 3px solid var(--neon-blue);
-            border-radius: 5px; margin-bottom: 20px;
-            animation: rotate-phone 2s infinite ease-in-out;
-        }
-
-        @keyframes rotate-phone {
-            0% { transform: rotate(0deg); }
-            50% { transform: rotate(90deg); }
-            100% { transform: rotate(90deg); }
-        }
-
-        /* Toon guard alleen in Portrait */
-        @media screen and (orientation: portrait) {
-            #landscape-guard { display: flex; }
-        }
-
-        /* Game Elements */
-        #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: #000; overflow: hidden; }
+        #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: #000; overflow: hidden; transition: background 0.1s; }
         .laser-beam { position: absolute; height: 6px; background: #fff; box-shadow: 0 0 15px 5px var(--neon-blue); z-index: 8; transform-origin: right center; pointer-events: none; }
         .debris { position: absolute; width: 5px; height: 5px; z-index: 20; pointer-events: none; }
         .invader { position: absolute; width: 60px; height: 55px; display: flex; flex-direction: column; align-items: center; z-index: 5; }
         .invader-svg { width: 40px; height: 30px; fill: var(--alien-green); }
-        .math-bubble { background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 16px; font-weight: 900; margin-bottom: 4px; border: 1px solid #000; }
+        .math-bubble { background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 16px; font-weight: 900; margin-bottom: 4px; border: 1px solid #000; white-space: nowrap; }
         .invader.rainbow { animation: rainbow-flash 0.3s infinite; }
         @keyframes rainbow-flash { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
 
         .boss { position: absolute; width: 220px; height: 180px; z-index: 10; display: flex; flex-direction: column; align-items: center; }
-        .boss-svg { width: 180px; height: 120px; fill: var(--neon-pink); }
+        .boss-svg { width: 180px; height: 120px; fill: var(--neon-pink); filter: drop-shadow(0 0 20px var(--neon-pink)); }
         .boss-hp { width: 100%; height: 12px; background: #333; border: 2px solid #fff; margin-top: 10px; border-radius: 6px; overflow: hidden; }
         #boss-hp-fill { width: 100%; height: 100%; background: var(--neon-pink); transition: width 0.3s; }
 
-        #abort-btn { position: absolute; top: 15px; right: 20px; z-index: 100; background: var(--neon-pink); color: #fff; border: none; padding: 8px 12px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        #abort-btn { position: absolute; top: 15px; right: 20px; z-index: 100; background: var(--neon-pink); color: #fff; border: none; padding: 8px 12px; font-weight: bold; border-radius: 5px; cursor: pointer; font-family: inherit; }
 
         #ui-bottom { position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; background: #111; border-top: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: space-evenly; padding: 5px; z-index: 9999; }
         .display-val { width: 60px; text-align: center; font-size: 28px; color: #fff; font-weight: bold; border-right: 2px solid #333; }
@@ -65,17 +39,17 @@
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; }
         .card { background: #050510; padding: 15px; border: 3px solid var(--neon-blue); text-align: center; border-radius: 15px; width: 90%; max-width: 500px; }
         .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; }
-        .table-btn { padding: 10px; border: 2px solid var(--neon-blue); background: transparent; color: white; border-radius: 8px; font-size: 16px; }
+        .table-btn { padding: 10px; border: 2px solid var(--neon-blue); background: transparent; color: white; border-radius: 8px; font-size: 16px; font-family: inherit; }
         .table-btn.active { background: var(--neon-blue); color: #000; font-weight: bold; }
         .highscore-table { width: 100%; font-size: 11px; color: var(--neon-blue); margin: 10px 0; border-collapse: collapse; text-align: left; }
+        .mode-select { margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 20px; color: #fff; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="landscape-guard">
-    <div class="phone-icon"></div>
+<div id="landscape-error">
     <h2 style="color: var(--neon-blue);">DRAAI JE TOESTEL</h2>
-    <p>Space Tables vereist landscape modus om de basis te verdedigen.</p>
+    <p>Landscape modus vereist.</p>
 </div>
 
 <div id="menu-screen" class="overlay">
@@ -94,16 +68,16 @@
             <button class="table-btn" onclick="toggleTable(9, this)">9</button>
             <button class="table-btn" onclick="toggleTable(10, this)">10</button>
         </div>
-        <div style="margin: 10px 0; color: #fff; display: flex; justify-content: center; gap: 15px; font-size: 13px;">
-            <label><input type="checkbox" id="check-division"> DEELTAFELS</label>
+        <div class="mode-select">
+            <label><input type="checkbox" id="check-division"> DEELTAFELS (+5 ptn)</label>
             <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue);">
-                <option value="0.3">SLOWMO</option>
-                <option value="0.7">REKRUUT</option>
-                <option value="1.1" selected>SOLDAAT</option>
-                <option value="2.0">ELITE</option>
+                <option value="0.3">SLOWMO (x1)</option>
+                <option value="0.7">REKRUUT (x2)</option>
+                <option value="1.1" selected>SOLDAAT (x3)</option>
+                <option value="2.0">ELITE (x5)</option>
             </select>
         </div>
-        <button onclick="startGame()" style="background:var(--alien-green); border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; font-size: 18px;">START VERDEDIGING</button>
+        <button onclick="startGame()" style="background:var(--alien-green); border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; font-size: 18px; font-family: inherit;">START MISSIE</button>
     </div>
 </div>
 
@@ -112,11 +86,11 @@
         <h2 id="end-title" style="color: var(--neon-pink);">MISSIE EINDE</h2>
         <p style="color: #fff;">SCORE: <span id="final-score">0</span></p>
         <div id="new-record-input" style="display:none; margin: 10px 0;">
-            <input type="text" id="initials" maxlength="3" placeholder="ABC" style="width:80px; text-align:center; background:#000; color:#fff; border:1px solid var(--neon-blue); font-size:20px; text-transform:uppercase;">
-            <button onclick="saveHighscore()" style="padding:10px; background:var(--alien-green); border:none; font-weight:bold;">SAVE</button>
+            <input type="text" id="initials" maxlength="3" placeholder="ABC" style="width:80px; text-align:center; background:#000; color:#fff; border:1px solid var(--neon-blue); font-size:20px; text-transform:uppercase; font-family: inherit;">
+            <button onclick="saveHighscore()" style="padding:10px; background:var(--alien-green); border:none; font-weight:bold; font-family: inherit;">SAVE</button>
         </div>
         <table id="highscore-list-final" class="highscore-table"></table>
-        <button onclick="resetToMenu()" style="background:#fff; border:none; padding:12px; width:100%; border-radius:10px; font-weight:bold;">MENU</button>
+        <button onclick="resetToMenu()" style="background:#fff; border:none; padding:12px; width:100%; border-radius:10px; font-weight:bold; font-family: inherit;">MENU</button>
     </div>
 </div>
 
@@ -137,10 +111,9 @@
 
 <script>
     let selectedTables = [], monsters = [], score = 0, currentInput = "", gameActive = false, spawnTimeout;
-    let penaltyActive = false; let bossActive = false; let bossHP = 10; let baseSpeed = 1.1;
-    let useDivision = false;
+    let penaltyActive = false, bossActive = false, bossHP = 10, baseSpeed = 1.1, useDivision = false;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const DB_KEY = 'SpaceTables_Final_v18';
+    const DB_KEY = 'SpaceTables_Final_v19';
 
     const alienSvg = '<svg class="invader-svg" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
     const bossSvg = '<svg style="width:180px;height:120px;fill:var(--neon-pink)" viewBox="0 0 11 8"><path d="M4 0h3v1H4zM2 1h7v1H2zM1 2h9v1H1zM0 3h2v1h1v1h5V4h1V3h2v3h-1v1H9v1H8V7H3v1H2V7H1V6H0V3zM2 3h1v1H2zm6 0h1v1H8z"/></svg>';
@@ -157,7 +130,7 @@
             const d = document.createElement('div'); d.className = 'debris';
             d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.backgroundColor = color;
             document.getElementById('game-container').appendChild(d);
-            const vx = (Math.random()-0.5)*15; const vy = (Math.random()-0.5)*15;
+            const vx = (Math.random()-0.5)*15, vy = (Math.random()-0.5)*15;
             let opacity = 1;
             const anim = setInterval(() => {
                 d.style.left = (parseFloat(d.style.left) + vx) + 'px';
@@ -168,20 +141,33 @@
         }
     }
 
+    // --- NIEUWE LOGICA VOOR PUNTEN EN BOSS THRESHOLD ---
+    function calculateTaskPoints(tableNum, isDivision) {
+        let pts = tableNum; // Tafel van 1 = 1pt, tafel van 10 = 10pt
+        if(isDivision) pts += 5; // Bonus voor deeltafels
+        
+        // Niveau multiplier
+        if(baseSpeed <= 0.3) return pts * 1;
+        if(baseSpeed <= 0.7) return pts * 2;
+        if(baseSpeed <= 1.1) return pts * 3;
+        return pts * 5;
+    }
+
     function getBossThreshold() {
-        if(baseSpeed <= 0.3) return 200;
-        if(baseSpeed <= 0.7) return 400;
-        if(baseSpeed <= 1.1) return 600;
-        return 1000;
+        if(baseSpeed <= 0.3) return 300;
+        if(baseSpeed <= 0.7) return 600;
+        if(baseSpeed <= 1.1) return 1200;
+        return 2500;
     }
 
     function generateMathTask() {
         const t = selectedTables[Math.floor(Math.random() * selectedTables.length)];
         const n = Math.floor(Math.random() * 10) + 1;
-        if (useDivision && Math.random() > 0.5) {
-            return { text: `${t*n}:${t}`, answer: n };
+        const isDiv = useDivision && Math.random() > 0.5;
+        if (isDiv) {
+            return { text: `${t*n}:${t}`, answer: n, table: t, isDiv: true };
         } else {
-            return { text: `${t}x${n}`, answer: t * n };
+            return { text: `${t}x${n}`, answer: t * n, table: t, isDiv: false };
         }
     }
 
@@ -222,13 +208,18 @@
         if(!gameActive || bossActive) return;
         if(score >= getBossThreshold()) { startBossFight(); return; }
         const task = generateMathTask();
-        const m = { x: -70, y: Math.random() * (window.innerHeight - 250) + 50, answer: task.answer, isRainbow: (selectedTables[0] === 1 && selectedTables.length === 1) ? false : Math.random() < 0.12, stage: 1, element: document.createElement('div') };
+        const m = { 
+            x: -70, y: Math.random() * (window.innerHeight - 250) + 50, 
+            answer: task.answer, table: task.table, isDiv: task.isDiv,
+            isRainbow: (selectedTables[0] === 1 && selectedTables.length === 1) ? false : Math.random() < 0.12, 
+            stage: 1, element: document.createElement('div') 
+        };
         m.element.className = 'invader' + (m.isRainbow ? ' rainbow' : '');
         m.element.innerHTML = `<div class="math-bubble">${task.text}</div>${alienSvg}`;
         m.element.style.top = m.y + 'px';
         document.getElementById('game-container').appendChild(m.element);
         monsters.push(m);
-        spawnTimeout = setTimeout(spawn, Math.max(1000, 4500 - (score * 5)));
+        spawnTimeout = setTimeout(spawn, Math.max(1000, 4500 - (score/20 * 5)));
     }
 
     function startBossFight() {
@@ -243,13 +234,14 @@
 
     function generateBossSum() {
         const task = generateMathTask(); monsters[0].answer = task.answer;
+        monsters[0].currentTable = task.table; monsters[0].currentIsDiv = task.isDiv;
         document.getElementById('boss-math').innerText = task.text;
     }
 
     function submit() {
         if(!gameActive || currentInput === "") return;
         const val = parseInt(currentInput);
-        let foundIdx = -1, maxX = -1, points = baseSpeed <= 0.3 ? 5 : baseSpeed <= 0.7 ? 10 : baseSpeed <= 1.1 ? 15 : 20;
+        let foundIdx = -1, maxX = -1;
         monsters.forEach((m, i) => { if(m.answer === val && (bossActive || m.x > maxX)) { maxX = m.x; foundIdx = i; } });
         
         if(foundIdx !== -1) {
@@ -257,14 +249,17 @@
             if(bossActive) {
                 bossHP--; document.getElementById('boss-hp-fill').style.width = (bossHP * 10) + '%';
                 createExplosion(m.x + 100, m.y + 75, '#ff0044', 20);
+                score += calculateTaskPoints(m.currentTable, m.currentIsDiv);
+                document.getElementById('score-val').innerText = score;
                 if(bossHP <= 0) {
                     createExplosion(m.x + 100, m.y + 75, '#ff0044', 100);
                     m.element.remove(); score += 500; endGame(true);
                 } else { generateBossSum(); }
             } else if(m.isRainbow && m.stage === 1) {
                 m.stage = 2; const next = generateMathTask(); m.answer = next.answer;
+                m.table = next.table; m.isDiv = next.isDiv;
                 m.element.querySelector('.math-bubble').innerText = next.text;
-                m.element.querySelector('.math-bubble').classList.add('second-stage');
+                m.element.querySelector('.math-bubble').style.backgroundColor = "#ff00ff";
                 createExplosion(m.x + 30, m.y + 30, '#fff', 10);
             } else {
                 const laser = document.createElement('div'); laser.className = 'laser-beam';
@@ -275,11 +270,16 @@
                     laser.remove();
                     if(m.isRainbow) {
                         playSound(100, 'sawtooth', 0.4, 0.3);
-                        monsters.forEach(o => { createExplosion(o.x + 30, o.y + 30, '#00d2ff', 20); o.element.remove(); });
-                        score += (monsters.length * points); monsters = [];
+                        monsters.forEach(o => { 
+                            createExplosion(o.x + 30, o.y + 30, '#00d2ff', 20); 
+                            score += calculateTaskPoints(o.table || 1, o.isDiv || false);
+                            o.element.remove(); 
+                        });
+                        monsters = [];
                     } else {
                         playSound(150, 'sawtooth', 0.2, 0.2); createExplosion(m.x + 30, m.y + 30, '#0f0', 20);
-                        m.element.remove(); monsters.splice(foundIdx, 1); score += points;
+                        score += calculateTaskPoints(m.table, m.isDiv);
+                        m.element.remove(); monsters.splice(foundIdx, 1);
                     }
                     document.getElementById('score-val').innerText = score;
                 }, 80);
@@ -295,8 +295,8 @@
 
     function update() {
         if(!gameActive) return;
-        let speed = (baseSpeed + (score / 4500)) * (penaltyActive ? 6 : 1);
-        let bSpeed = (baseSpeed * 0.4) * (penaltyActive ? 6 : 1);
+        let speed = (baseSpeed + (score / 15000)) * (penaltyActive ? 6 : 1);
+        let bSpeed = (baseSpeed * 0.3) * (penaltyActive ? 6 : 1);
         monsters.forEach(m => {
             m.x += bossActive ? bSpeed : speed; m.element.style.left = m.x + 'px';
             if(m.x > window.innerWidth - (bossActive ? 220 : 65)) endGame(false);
@@ -308,6 +308,7 @@
         gameActive = false; clearTimeout(spawnTimeout);
         document.getElementById('game-over-screen').style.display = 'flex';
         document.getElementById('end-title').innerText = win ? "BAAS VERSLAGEN!" : "BASIS VERWOEST";
+        document.getElementById('end-title').style.color = win ? "#0f0" : "#f04";
         document.getElementById('final-score').innerText = score;
         const s = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
         if(score > 0 && (s.length < 10 || score > (s[s.length-1]?.score || 0))) document.getElementById('new-record-input').style.display = 'block';
@@ -328,10 +329,4 @@
         monsters.forEach(m => { if(m.element) m.element.remove(); }); monsters = [];
         const b = document.querySelector('.boss'); if(b) b.remove();
         document.getElementById('game-over-screen').style.display = 'none';
-        document.getElementById('game-container').style.display = 'none';
-        document.getElementById('menu-screen').style.display = 'flex';
-        renderHighscores('start-highscore-box', 3);
-    }
-</script>
-</body>
-</html>
+        document
