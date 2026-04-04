@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Space Tables: Final Strike</title>
+    <title>Space Tables: Highscore Fix</title>
     <style>
         :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; --boss-red: #ff0000; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; background-color: #000; position: fixed; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
@@ -15,7 +15,7 @@
         .laser-beam { position: absolute; height: 14px; background: #fff; border-radius: 10px; box-shadow: 0 0 20px 5px var(--neon-blue), 0 0 40px 10px #fff; z-index: 8; transform-origin: right center; pointer-events: none; }
         .debris { position: absolute; width: 6px; height: 6px; z-index: 25; pointer-events: none; border-radius: 1px; }
         
-        #victory-announcement { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 50px; font-weight: bold; text-align: center; text-shadow: 0 0 20px var(--neon-blue); z-index: 90; display: none; pointer-events: none; }
+        #victory-announcement { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 50px; font-weight: bold; text-align: center; text-shadow: 0 0 20px var(--neon-blue); z-index: 90; display: none; pointer-events: none; }
 
         .invader { position: absolute; width: 65px; height: 60px; display: flex; flex-direction: column; align-items: center; z-index: 5; }
         .invader-svg { width: 45px; height: 35px; fill: var(--alien-green); filter: drop-shadow(0 0 5px var(--alien-green)); }
@@ -32,24 +32,41 @@
 
         #abort-btn { position: absolute; top: 15px; right: 20px; z-index: 10000; background: var(--neon-pink); color: #fff; border: 2px solid #fff; padding: 10px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; }
 
-        #ui-bottom { position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; background: #111; border-top: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: space-evenly; padding: 5px; z-index: 9999; }
+        /* UI Numpad */
+        #ui-bottom { position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; background: #111; border-top: 2px solid var(--neon-blue); display: flex; align-items: center; justify-content: space-evenly; padding: 5px; z-index: 999; }
         .display-val { width: 60px; text-align: center; font-size: 28px; color: #fff; font-weight: bold; border-right: 2px solid #333; }
         .key { flex: 1; margin: 3px; height: 65px; background: #222; border: 1px solid var(--neon-blue); color: var(--neon-blue); font-size: 22px; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; }
         .key:active { background: var(--neon-blue); color: #000; }
 
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 20000; }
-        .card { background: #050510; padding: 15px; border: 3px solid var(--neon-blue); text-align: center; border-radius: 15px; width: 90%; max-width: 500px; }
+        /* Highscore Overlays */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .card { background: #050510; padding: 15px; border: 3px solid var(--neon-blue); text-align: center; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 0 20px var(--neon-blue); }
         .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; }
         .table-btn { padding: 10px; border: 2px solid var(--neon-blue); background: transparent; color: white; border-radius: 8px; font-size: 16px; font-family: inherit; }
         .table-btn.active { background: var(--neon-blue); color: #000; font-weight: bold; }
         .highscore-table { width: 100%; font-size: 11px; color: var(--neon-blue); margin: 10px 0; border-collapse: collapse; text-align: left; }
+
+        /* INPUT FIX STYLES */
+        #new-record-input { 
+            position: relative; z-index: 20000; 
+            margin: 15px 0; background: rgba(0,210,255,0.2); 
+            padding: 15px; border-radius: 10px; border: 1px solid var(--neon-blue);
+        }
+        #initials { 
+            width: 120px; text-align: center; background: #fff !important; 
+            color: #000 !important; border: 3px solid var(--neon-blue); 
+            font-size: 28px; text-transform: uppercase; padding: 10px; 
+            border-radius: 5px; font-weight: bold; display: inline-block;
+            -webkit-user-select: text; user-select: text;
+        }
     </style>
 </head>
 <body>
 
 <div id="landscape-guard">
+    <div style="font-size: 50px;">🔄</div>
     <h2 style="color: var(--neon-blue);">DRAAI JE TOESTEL</h2>
-    <p>Landscape modus vereist.</p>
+    <p>Landscape modus is nodig om de aliens te raken.</p>
 </div>
 
 <div id="menu-screen" class="overlay">
@@ -68,30 +85,35 @@
             <button class="table-btn" onclick="toggleTable(9, this)">9</button>
             <button class="table-btn" onclick="toggleTable(10, this)">10</button>
         </div>
-        <div style="margin: 10px 0; color: #fff; font-size: 13px; display: flex; justify-content: center; gap: 10px; align-items: center;">
-            <label><input type="checkbox" id="check-division"> DEEL</label>
-            <label><input type="checkbox" id="check-nosound"> NO SOUND</label>
-            <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue);">
+        <div style="margin: 10px 0; color: #fff; font-size: 13px; display: flex; justify-content: center; gap: 15px; align-items: center;">
+            <label style="cursor:pointer"><input type="checkbox" id="check-division"> DEELTAFELS</label>
+            <label style="cursor:pointer"><input type="checkbox" id="check-nosound"> NO SOUND</label>
+        </div>
+        <div style="margin-bottom:15px">
+             <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue); padding:5px; font-family:inherit;">
                 <option value="0.5">SLOWMO</option>
                 <option value="0.9">REKRUUT</option>
                 <option value="1.4" selected>SOLDAAT</option>
                 <option value="2.2">ELITE</option>
             </select>
         </div>
-        <button onclick="startGame()" style="background:var(--alien-green); border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; font-size: 18px; cursor: pointer;">START MISSIE</button>
+        <button onclick="startGame()" style="background:var(--alien-green); border:none; padding:15px; width:100%; border-radius:10px; font-weight:bold; font-size: 20px; cursor: pointer;">START MISSIE</button>
     </div>
 </div>
 
-<div id="game-over-screen" class="overlay" style="display:none; z-index: 20005;">
+<div id="game-over-screen" class="overlay" style="display:none;">
     <div class="card">
         <h2 id="end-title" style="color: var(--neon-pink);">MISSIE EINDE</h2>
-        <p style="color: #fff;">SCORE: <span id="final-score">0</span></p>
-        <div id="new-record-input" style="display:none; margin: 15px 0; background: rgba(0,210,255,0.1); padding: 15px; border-radius: 10px;">
-            <input type="text" id="initials" maxlength="3" placeholder="ABC" style="width:100px; text-align:center; background:#fff; color:#000; border:none; font-size:24px; text-transform:uppercase; padding:10px; border-radius: 5px; -webkit-user-select: text;">
-            <button onclick="saveHighscore()" style="padding:12px 20px; background:var(--alien-green); border:none; font-weight:bold; border-radius: 5px; margin-top:10px; width:100%;">SAVE</button>
+        <p style="color: #fff; font-size: 20px;">EIND SCORE: <span id="final-score">0</span></p>
+        
+        <div id="new-record-input" style="display:none;">
+            <p style="color:var(--alien-green); margin:0 0 10px 0; font-weight:bold;">NIEUW RECORD! VOER INITIALEN IN:</p>
+            <input type="text" id="initials" maxlength="3" placeholder="AAA" inputmode="text" autocomplete="off">
+            <button onclick="saveHighscore()" style="padding:12px 20px; background:var(--alien-green); border:none; font-weight:bold; border-radius: 5px; margin-top:10px; width:100%; cursor:pointer; font-size:18px;">OPSLAAN</button>
         </div>
+
         <table id="highscore-list-final" class="highscore-table"></table>
-        <button onclick="resetToMenu()" style="background:#fff; border:none; padding:12px; width:100%; border-radius:10px; font-weight:bold; margin-top:10px;">MENU</button>
+        <button onclick="resetToMenu()" style="background:#fff; border:none; padding:12px; width:100%; border-radius:10px; font-weight:bold; margin-top:10px; cursor:pointer;">MENU</button>
     </div>
 </div>
 
@@ -100,9 +122,10 @@
     <div id="victory-announcement">SCORE: 0</div>
     <div id="stats" style="position:absolute; top:20px; left:20px; color:var(--neon-blue); font-weight:bold; z-index:100;">SCORE: <span id="score-val">0</span></div>
     <div id="base" style="position:absolute; right:0; top:0; width:5px; height:100%; background: var(--neon-blue);"></div>
+    
     <div id="ui-bottom">
         <div id="display-val" class="display-val">-</div>
-        <div id="numpad-row" style="display:flex; gap:3px; flex:5;">
+        <div style="display:flex; gap:3px; flex:5;">
             <div class="key" onclick="press('1')">1</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('3')">3</div><div class="key" onclick="press('4')">4</div><div class="key" onclick="press('5')">5</div>
             <div class="key" onclick="press('6')">6</div><div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div><div class="key" onclick="press('0')">0</div>
         </div>
@@ -115,7 +138,7 @@
     let selectedTables = [], monsters = [], score = 0, currentInput = "", gameActive = false, spawnTimeout;
     let penaltyActive = false, bossActive = false, bossHP = 15, baseSpeed = 1.4, useDivision = false, noSound = false;
     let taskPool = [], audioCtx, bossMusicCount = 0;
-    const DB_KEY = 'SpaceTables_Final_v31';
+    const DB_KEY = 'SpaceTables_Final_v32';
     const DESIRED_GAP = 280; 
 
     const alienShapes = [
@@ -135,16 +158,14 @@
     }
 
     function playImperialMarch() {
-        if(noSound || !bossActive || bossMusicCount >= 2) return; initAudio();
-        bossMusicCount++;
+        if(noSound || !bossActive || bossMusicCount >= 2) return; initAudio(); bossMusicCount++;
         const march = [{f:440, d:0.5}, {f:440, d:0.5}, {f:440, d:0.5}, {f:349, d:0.35}, {f:523, d:0.15}, {f:440, d:0.5}, {f:349, d:0.35}, {f:523, d:0.15}, {f:440, d:1.0}];
         let time = audioCtx.currentTime;
         march.forEach(n => {
             const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
             osc.type = 'square'; osc.frequency.setValueAtTime(n.f, time);
             g.gain.setValueAtTime(0.08, time); g.gain.exponentialRampToValueAtTime(0.01, time + n.d);
-            osc.connect(g); g.connect(audioCtx.destination);
-            osc.start(time); osc.stop(time + n.d); time += n.d;
+            osc.connect(g); g.connect(audioCtx.destination); osc.start(time); osc.stop(time + n.d); time += n.d;
         });
         if(bossMusicCount < 2) setTimeout(playImperialMarch, 5000);
     }
@@ -190,11 +211,17 @@
 
     function startGame() {
         if(!selectedTables.length) return alert("Selecteer tafels!");
-        initAudio(); baseSpeed = parseFloat(document.getElementById('speed-select').value); useDivision = document.getElementById('check-division').checked; noSound = document.getElementById('check-nosound').checked;
+        initAudio(); 
+        baseSpeed = parseFloat(document.getElementById('speed-select').value);
+        useDivision = document.getElementById('check-division').checked;
+        noSound = document.getElementById('check-nosound').checked;
         initializeTaskPool(); score = 0; monsters = []; bossActive = false; bossHP = 15; bossMusicCount = 0;
-        document.getElementById('menu-screen').style.display = 'none'; document.getElementById('game-container').style.display = 'block';
-        document.getElementById('stats').style.display = 'block'; document.getElementById('victory-announcement').style.display = 'none';
-        document.getElementById('score-val').innerText = "0"; gameActive = true; spawn(); update();
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        document.getElementById('stats').style.display = 'block';
+        document.getElementById('victory-announcement').style.display = 'none';
+        document.getElementById('score-val').innerText = "0";
+        gameActive = true; spawn(); update();
     }
 
     function spawn() {
@@ -298,9 +325,18 @@
         gameActive = false; clearTimeout(spawnTimeout);
         document.getElementById('game-over-screen').style.display = 'flex';
         document.getElementById('end-title').innerText = win ? "BAAS VERSLAGEN!" : "BASIS VERWOEST";
+        document.getElementById('end-title').style.color = win ? "#0f0" : "#f04";
         document.getElementById('final-score').innerText = score;
+        
         const s = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-        if(score > 0 && (s.length < 10 || score > (s[s.length-1]?.score || 0))) document.getElementById('new-record-input').style.display = 'block';
+        const isRecord = score > 0 && (s.length < 10 || score > (s[s.length-1]?.score || 0));
+        
+        if(isRecord) {
+            document.getElementById('new-record-input').style.display = 'block';
+            setTimeout(() => { document.getElementById('initials').focus(); }, 500);
+        } else {
+            document.getElementById('new-record-input').style.display = 'none';
+        }
         renderHighscores('highscore-list-final', 10);
     }
 
@@ -317,12 +353,12 @@
         let s = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
         s.push({name: n, score: score}); s.sort((a,b) => b.score - a.score);
         localStorage.setItem(DB_KEY, JSON.stringify(s.slice(0, 10)));
-        resetToMenu();
+        input.value = ""; resetToMenu();
     }
 
     function resetToMenu() {
-        gameActive = false; bossActive = false; clearTimeout(spawnTimeout);
-        monsters.forEach(m => m.element && m.element.remove()); monsters = [];
+        gameActive = false; bossActive = false;
+        monsters.forEach(m => { if(m.element) m.element.remove(); }); monsters = [];
         const b = document.querySelector('.boss'); if(b) b.remove();
         document.getElementById('game-over-screen').style.display = 'none';
         document.getElementById('game-container').style.display = 'none';
