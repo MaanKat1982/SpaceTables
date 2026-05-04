@@ -13,20 +13,13 @@
 
         #game-container { position: relative; width: 100%; height: 100dvh; display: none; background: radial-gradient(circle at center, #1b2735 0%, #000 100%); overflow: hidden; }
         
-        /* BOSS PROGRESS SLIDER */
-        #boss-progress-container {
-            position: absolute; top: 0; left: 0; width: 100%; height: 6px;
-            background: rgba(255,255,255,0.1); z-index: 1000;
-        }
-        #boss-progress-fill {
-            width: 0%; height: 100%; background: var(--neon-blue);
-            box-shadow: 0 0 10px var(--neon-blue); transition: width 0.3s;
-        }
+        #boss-progress-container { position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: rgba(255,255,255,0.1); z-index: 1000; }
+        #boss-progress-fill { width: 0%; height: 100%; background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); transition: width 0.3s; }
 
         .laser-beam { position: absolute; height: 14px; background: #fff; border-radius: 10px; box-shadow: 0 0 20px 5px var(--neon-blue), 0 0 40px 10px #fff; z-index: 8; transform-origin: right center; pointer-events: none; }
         .debris { position: absolute; width: 6px; height: 6px; z-index: 25; pointer-events: none; }
         
-        #victory-announcement { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 50px; font-weight: bold; text-align: center; text-shadow: 0 0 20px var(--neon-blue); z-index: 90; display: none; pointer-events: none; }
+        #victory-announcement { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 40px; font-weight: bold; text-align: center; text-shadow: 0 0 20px var(--neon-blue); z-index: 90; display: none; pointer-events: none; white-space: pre-wrap; }
 
         .invader { position: absolute; width: 65px; height: 60px; display: flex; flex-direction: column; align-items: center; z-index: 5; }
         .invader-svg { width: 45px; height: 35px; fill: var(--alien-green); filter: drop-shadow(0 0 5px var(--alien-green)); }
@@ -34,12 +27,11 @@
 
         .rainbow .invader-svg { animation: rainbowAnim 0.3s infinite linear; }
         @keyframes rainbowAnim { 0% { fill: #f00; } 33% { fill: #0f0; } 66% { fill: #00f; } 100% { fill: #f00; } }
-        .math-bubble.stage2 { background: #ff00ff !important; color: #fff !important; border: 2px solid #fff; }
 
         .boss { position: absolute; width: 250px; height: 200px; z-index: 10; display: flex; flex-direction: column; align-items: center; }
         .boss-svg { width: 200px; height: 140px; fill: var(--boss-red); filter: drop-shadow(0 0 30px var(--boss-red)); }
         .boss-hp { width: 100%; height: 15px; background: #333; border: 2px solid #fff; margin-top: 10px; border-radius: 8px; overflow: hidden; }
-        #boss-hp-fill { width: 100%; height: 100%; background: var(--boss-red); transition: width 0.3s; }
+        #boss-hp-fill { width: 100%; height: 100%; background: var(--boss-red); transition: width 0.1s; }
 
         #abort-btn { position: absolute; top: 15px; right: 20px; z-index: 10000; background: var(--neon-pink); color: #fff; border: 2px solid #fff; padding: 10px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; }
 
@@ -80,12 +72,13 @@
             <button class="table-btn" onclick="toggleTable(9, this)">9</button>
             <button class="table-btn" onclick="toggleTable(10, this)">10</button>
         </div>
-        <div style="margin: 10px 0; color: #fff; font-size: 13px; display: flex; justify-content: center; gap: 15px; align-items: center;">
+        <div style="margin: 10px 0; color: #fff; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left;">
             <label style="cursor:pointer"><input type="checkbox" id="check-division"> DEELTAFELS</label>
+            <label style="cursor:pointer; color:var(--alien-green)"><input type="checkbox" id="check-complete"> COMPLETE MODE</label>
             <label style="cursor:pointer"><input type="checkbox" id="check-nosound"> NO SOUND</label>
         </div>
         <div style="margin-bottom:15px">
-             <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue); padding:5px; font-family:inherit;">
+             <select id="speed-select" style="background:#000; color:var(--neon-blue); border:1px solid var(--neon-blue); padding:5px; font-family:inherit; width: 100%;">
                 <option value="0.5">SLOWMO</option>
                 <option value="0.9">REKRUUT</option>
                 <option value="1.4" selected>SOLDAAT</option>
@@ -129,7 +122,7 @@
 
 <script>
     let selectedTables = [], monsters = [], score = 0, currentInput = "", gameActive = false, spawnTimeout;
-    let penaltyActive = false, bossActive = false, bossHP = 15, baseSpeed = 1.4, useDivision = false, noSound = false;
+    let penaltyActive = false, bossActive = false, bossHP = 15, baseSpeed = 1.4, useDivision = false, noSound = false, isCompleteMode = false;
     let taskPool = [], audioCtx, bossMusicCount = 0;
     const DB_KEY = 'SpaceTables_Final_v33';
     const DESIRED_GAP = 280; 
@@ -211,25 +204,50 @@
 
     function updateBossSlider() {
         const threshold = getBossThreshold();
-        const pct = Math.min(100, (score / threshold) * 100);
         const fill = document.getElementById('boss-progress-fill');
-        fill.style.width = pct + "%";
-        if(pct >= 100) fill.style.background = "var(--boss-red)";
-        else fill.style.background = "var(--neon-blue)";
+        if(isCompleteMode) {
+            const total = selectedTables.length * (useDivision ? 20 : 10);
+            const remaining = taskPool.length + monsters.length;
+            const pct = Math.min(100, ((total - remaining) / total) * 100);
+            fill.style.width = pct + "%";
+            fill.style.background = "var(--alien-green)";
+        } else {
+            const pct = Math.min(100, (score / threshold) * 100);
+            fill.style.width = pct + "%";
+            fill.style.background = pct >= 100 ? "var(--boss-red)" : "var(--neon-blue)";
+        }
     }
 
     function startGame() {
         if(!selectedTables.length) return alert("Kies tafels!");
-        initAudio(); baseSpeed = parseFloat(document.getElementById('speed-select').value); useDivision = document.getElementById('check-division').checked; noSound = document.getElementById('check-nosound').checked;
-        initializeTaskPool(); score = 0; monsters = []; bossActive = false; bossHP = 15; bossMusicCount = 0;
-        document.getElementById('menu-screen').style.display = 'none'; document.getElementById('game-container').style.display = 'block';
-        document.getElementById('stats').style.display = 'block'; document.getElementById('victory-announcement').style.display = 'none';
-        document.getElementById('score-val').innerText = "0"; updateBossSlider(); gameActive = true; spawn(); update();
+        initAudio(); 
+        baseSpeed = parseFloat(document.getElementById('speed-select').value); 
+        useDivision = document.getElementById('check-division').checked; 
+        noSound = document.getElementById('check-nosound').checked;
+        isCompleteMode = document.getElementById('check-complete').checked;
+        
+        initializeTaskPool(); 
+        score = 0; monsters = []; bossActive = false; bossHP = 15; bossMusicCount = 0;
+        document.getElementById('menu-screen').style.display = 'none'; 
+        document.getElementById('game-container').style.display = 'block';
+        document.getElementById('stats').style.display = 'block'; 
+        document.getElementById('victory-announcement').style.display = 'none';
+        document.getElementById('score-val').innerText = "0"; 
+        updateBossSlider(); 
+        gameActive = true; 
+        spawn(); 
+        update();
     }
 
     function spawn() {
         if(!gameActive || bossActive) return;
-        if(score >= getBossThreshold()) { startBossFight(); return; }
+
+        // Einde check voor Complete Mode
+        if(isCompleteMode && taskPool.length === 0) return;
+
+        // Boss check (alleen als niet in complete mode)
+        if(!isCompleteMode && score >= getBossThreshold()) { startBossFight(); return; }
+
         const task = generateMathTask();
         const m = { x: -70, y: Math.random() * (window.innerHeight - 250) + 50, answer: task.answer, table: task.table, isDiv: task.isDiv, isRainbow: Math.random() < 0.12, stage: 1, element: document.createElement('div') };
         m.element.className = 'invader' + (m.isRainbow ? ' rainbow' : '');
@@ -257,10 +275,14 @@
 
     function submit() {
         if(!gameActive || currentInput === "") return;
-        const val = parseInt(currentInput); let foundIdx = -1, maxX = -1;
-        monsters.forEach((m, i) => { if(m.answer === val && (bossActive || m.x > maxX)) { maxX = m.x; foundIdx = i; } });
-        if(foundIdx !== -1) {
-            const m = monsters[foundIdx]; playLaserSound();
+        const val = parseInt(currentInput); 
+        let targets = monsters.filter(m => m.answer === val).sort((a,b) => b.x - a.x);
+        
+        if(targets.length > 0) {
+            const m = targets[0]; 
+            const foundIdx = monsters.indexOf(m);
+            playLaserSound();
+
             if(bossActive) {
                 bossHP--; document.getElementById('boss-hp-fill').style.width = (bossHP / 15 * 100) + '%';
                 createExplosion(m.x + 120, m.y + 70, '#ff0000', 30);
@@ -270,7 +292,6 @@
             } else if(m.isRainbow && m.stage === 1) {
                 m.stage = 2; const next = generateMathTask(); m.answer = next.answer; m.table = next.table; m.isDiv = next.isDiv;
                 m.element.querySelector('.math-bubble').innerText = next.text;
-                m.element.querySelector('.math-bubble').classList.add('stage2');
                 createExplosion(m.x + 30, m.y + 30, '#fff', 15);
             } else {
                 const laser = document.createElement('div'); laser.className = 'laser-beam';
@@ -289,6 +310,11 @@
                     }
                     document.getElementById('score-val').innerText = score;
                     updateBossSlider();
+
+                    // Check win conditie voor Complete Mode
+                    if(isCompleteMode && taskPool.length === 0 && monsters.length === 0) {
+                        setTimeout(() => endGame(true), 500);
+                    }
                 }, 100);
             }
         } else {
@@ -301,7 +327,7 @@
     function bossVictorySequence(boss) {
         gameActive = false; bossActive = false;
         const v = document.getElementById('victory-announcement');
-        v.innerText = "OVERWINNING!\nSCORE: " + score; v.style.display = 'block';
+        v.innerText = "BAAS VERSLAGEN!\nSCORE: " + score; v.style.display = 'block';
         let count = 0;
         const interval = setInterval(() => {
             createExplosion(boss.x + Math.random()*200, boss.y + Math.random()*150, '#ff0000', 35);
@@ -322,7 +348,18 @@
     function endGame(win) {
         gameActive = false; clearTimeout(spawnTimeout);
         document.getElementById('game-over-screen').style.display = 'flex';
-        document.getElementById('end-title').innerText = win ? "BAAS VERSLAGEN!" : "BASIS VERWOEST";
+        
+        if(win) {
+            document.getElementById('end-title').innerText = isCompleteMode ? "MISSIE VOLBRACHT" : "BAAS VERSLAGEN!";
+            document.getElementById('end-title').style.color = "var(--alien-green)";
+            const v = document.getElementById('victory-announcement');
+            v.innerText = isCompleteMode ? "BASIS VEILIG!\nSCORE: " + score : "OVERWINNING!\nSCORE: " + score;
+            v.style.display = 'block';
+        } else {
+            document.getElementById('end-title').innerText = "BASIS VERWOEST";
+            document.getElementById('end-title').style.color = "var(--neon-pink)";
+        }
+
         document.getElementById('final-score').innerText = score;
         const s = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
         const isRecord = score > 0 && (s.length < 10 || score > (s[s.length-1]?.score || 0));
