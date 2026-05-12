@@ -203,7 +203,6 @@
     function press(k) { initAudio(); if(k === 'C') currentInput = ""; else if(currentInput.length < 3) currentInput += k; document.getElementById('display-val').innerText = currentInput || "-"; }
 
     function updateBossSlider() {
-        const threshold = getBossThreshold();
         const fill = document.getElementById('boss-progress-fill');
         if(isCompleteMode) {
             const total = selectedTables.length * (useDivision ? 20 : 10);
@@ -212,6 +211,7 @@
             fill.style.width = pct + "%";
             fill.style.background = "var(--alien-green)";
         } else {
+            const threshold = getBossThreshold();
             const pct = Math.min(100, (score / threshold) * 100);
             fill.style.width = pct + "%";
             fill.style.background = pct >= 100 ? "var(--boss-red)" : "var(--neon-blue)";
@@ -242,14 +242,15 @@
     function spawn() {
         if(!gameActive || bossActive) return;
 
-        // Einde check voor Complete Mode
         if(isCompleteMode && taskPool.length === 0) return;
 
-        // Boss check (alleen als niet in complete mode)
         if(!isCompleteMode && score >= getBossThreshold()) { startBossFight(); return; }
 
         const task = generateMathTask();
-        const m = { x: -70, y: Math.random() * (window.innerHeight - 250) + 50, answer: task.answer, table: task.table, isDiv: task.isDiv, isRainbow: Math.random() < 0.12, stage: 1, element: document.createElement('div') };
+        // Alleen rainbow als we NIET in Complete Mode zitten
+        const isRainbowChance = !isCompleteMode && Math.random() < 0.12;
+        
+        const m = { x: -70, y: Math.random() * (window.innerHeight - 250) + 50, answer: task.answer, table: task.table, isDiv: task.isDiv, isRainbow: isRainbowChance, stage: 1, element: document.createElement('div') };
         m.element.className = 'invader' + (m.isRainbow ? ' rainbow' : '');
         m.element.innerHTML = `<div class="math-bubble">${task.text}</div>${alienShapes[Math.floor(Math.random()*3)]}`;
         m.element.style.top = m.y + 'px';
@@ -311,7 +312,6 @@
                     document.getElementById('score-val').innerText = score;
                     updateBossSlider();
 
-                    // Check win conditie voor Complete Mode
                     if(isCompleteMode && taskPool.length === 0 && monsters.length === 0) {
                         setTimeout(() => endGame(true), 500);
                     }
@@ -349,15 +349,16 @@
         gameActive = false; clearTimeout(spawnTimeout);
         document.getElementById('game-over-screen').style.display = 'flex';
         
+        const title = document.getElementById('end-title');
         if(win) {
-            document.getElementById('end-title').innerText = isCompleteMode ? "MISSIE VOLBRACHT" : "BAAS VERSLAGEN!";
-            document.getElementById('end-title').style.color = "var(--alien-green)";
+            title.innerText = isCompleteMode ? "MISSIE VOLBRACHT" : "BAAS VERSLAGEN!";
+            title.style.color = "var(--alien-green)";
             const v = document.getElementById('victory-announcement');
             v.innerText = isCompleteMode ? "BASIS VEILIG!\nSCORE: " + score : "OVERWINNING!\nSCORE: " + score;
             v.style.display = 'block';
         } else {
-            document.getElementById('end-title').innerText = "BASIS VERWOEST";
-            document.getElementById('end-title').style.color = "var(--neon-pink)";
+            title.innerText = "BASIS VERWOEST";
+            title.style.color = "var(--neon-pink)";
         }
 
         document.getElementById('final-score').innerText = score;
