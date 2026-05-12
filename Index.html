@@ -8,14 +8,15 @@
         :root { --neon-blue: #00d2ff; --neon-pink: #ff0044; --alien-green: #0f0; --boss-red: #ff0000; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; background-color: #000; position: fixed; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
         
-        /* Splash Image Styling */
+        /* Geoptimaliseerde Splash Image Styling */
         #splash-screen {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            width: 100vw;
+            height: 100dvh;
+            object-fit: contain; /* Zorgt dat de hele afbeelding altijd zichtbaar is */
+            background-color: #000; /* Vult lege ruimte rondom de foto met zwart */
             z-index: 25000;
             cursor: pointer;
         }
@@ -68,8 +69,7 @@
     <p>Landscape modus vereist.</p>
 </div>
 
-<!-- Nieuwe Splash Image -->
-<img src="Splash.jpeg" id="splash-screen" alt="Space Tables Splash" onclick="this.style.display='none'; initAudio();">
+<img src="splash.jpg" id="splash-screen" alt="Space Tables Splash" onclick="this.style.display='none'; initAudio();">
 
 <div id="menu-screen" class="overlay">
     <div class="card">
